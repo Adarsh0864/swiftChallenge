@@ -20,124 +20,32 @@ struct ContentView: View {
     
     var body: some View {
         NavigationView {
-            VStack {
-                if !isQRGenerated {
-                    // QR Code Generation Options
-                    Picker("QR Code Type", selection: $generationType) {
-                        Text("Text").tag(GenerationType.text)
-                        Text("Image").tag(GenerationType.image)
-                    }
-                    .pickerStyle(SegmentedPickerStyle())
-                    .padding()
-                    
-                    if generationType == .text {
-                        TextField("Enter text for QR code", text: $inputText)
-                            .textFieldStyle(RoundedBorderTextFieldStyle())
-                            .padding(.horizontal)
-                            .padding(.bottom)
-                        
-                        Button(action: {
-                            generateQRCode()
-                            isQRGenerated = true
-                        }) {
-                            Text("Generate QR Code")
-                                .font(.headline)
-                                .foregroundColor(.white)
-                                .frame(height: 50)
-                                .frame(maxWidth: .infinity)
-                                .background(Color.blue)
-                                .cornerRadius(12)
+            ZStack {
+                Color.black.edgesIgnoringSafeArea(.all)
+                
+                VStack {
+                    if !isQRGenerated {
+                        // QR Code Generation Options
+                        Picker("QR Code Type", selection: $generationType) {
+                            Text("Text").tag(GenerationType.text)
+                            Text("Image").tag(GenerationType.image)
                         }
-                        .padding(.horizontal)
-                        .disabled(inputText.isEmpty)
-                    } else {
-                        VStack {
-                            if let selectedImage = selectedImage {
-                                Image(uiImage: selectedImage)
-                                    .resizable()
-                                    .scaledToFit()
-                                    .frame(height: 200)
-                                    .clipShape(RoundedRectangle(cornerRadius: 12))
-                                    .shadow(radius: 3)
-                            }
-                            
-                            Button(action: {
-                                showingImagePicker = true
-                            }) {
-                                Text(selectedImage == nil ? "Select Image" : "Change Image")
-                                    .font(.headline)
-                                    .foregroundColor(.white)
-                                    .frame(height: 50)
-                                    .frame(maxWidth: .infinity)
-                                    .background(Color.green)
-                                    .cornerRadius(12)
-                            }
-                            .padding(.horizontal)
-                            .padding(.vertical, 8)
-                            
-                            if selectedImage != nil {
-                                Button(action: {
-                                    generatePixelArt()
-                                    isQRGenerated = true
-                                }) {
-                                    Text("Generate Pixel Art QR Code")
-                                        .font(.headline)
-                                        .foregroundColor(.white)
-                                        .frame(height: 50)
-                                        .frame(maxWidth: .infinity)
-                                        .background(Color.blue)
-                                        .cornerRadius(12)
-                                }
+                        .pickerStyle(SegmentedPickerStyle())
+                        .padding()
+                        .colorScheme(.dark)
+                        
+                        if generationType == .text {
+                            TextField("Enter text for QR code", text: $inputText)
+                                .textFieldStyle(RoundedBorderTextFieldStyle())
                                 .padding(.horizontal)
-                            }
-                        }
-                    }
-                } else {
-                    // QR Code Display View
-                    if let qrCode = qrCode {
-                        Spacer()
-                        
-                        VStack(spacing: 16) {
-                            Image(uiImage: qrCode)
-                                .interpolation(.none)
-                                .resizable()
-                                .scaledToFit()
-                                .frame(width: 250, height: 250)
-                                .shadow(radius: 5)
-                            
-                            if !pixelArtText.isEmpty {
-                                Text("Original Pixel Art:")
-                                    .font(.headline)
-                                    .padding(.top, 8)
-                                
-                                Text(pixelArtText)
-                                    .font(.system(.body, design: .monospaced))
-                                    .padding(8)
-                                    .background(Color.gray.opacity(0.1))
-                                    .cornerRadius(8)
-                            }
-                        }
-                        
-                        Spacer()
-                        
-                        HStack(spacing: 20) {
-                            Button(action: {
-                                isQRGenerated = false
-                                pixelArtText = ""
-                            }) {
-                                Text("Change")
-                                    .font(.headline)
-                                    .foregroundColor(.white)
-                                    .frame(height: 50)
-                                    .frame(maxWidth: .infinity)
-                                    .background(Color.gray)
-                                    .cornerRadius(12)
-                            }
+                                .padding(.bottom)
+                                .colorScheme(.dark)
                             
                             Button(action: {
-                                saveQRCode()
+                                generateQRCode()
+                                isQRGenerated = true
                             }) {
-                                Text("Save")
+                                Text("Generate QR Code")
                                     .font(.headline)
                                     .foregroundColor(.white)
                                     .frame(height: 50)
@@ -145,14 +53,119 @@ struct ContentView: View {
                                     .background(Color.blue)
                                     .cornerRadius(12)
                             }
+                            .padding(.horizontal)
+                            .disabled(inputText.isEmpty)
+                        } else {
+                            VStack {
+                                if let selectedImage = selectedImage {
+                                    Image(uiImage: selectedImage)
+                                        .resizable()
+                                        .scaledToFit()
+                                        .frame(height: 200)
+                                        .clipShape(RoundedRectangle(cornerRadius: 12))
+                                        .shadow(color: .blue.opacity(0.6), radius: 5)
+                                }
+                                
+                                Button(action: {
+                                    showingImagePicker = true
+                                }) {
+                                    Text(selectedImage == nil ? "Select Image" : "Change Image")
+                                        .font(.headline)
+                                        .foregroundColor(.white)
+                                        .frame(height: 50)
+                                        .frame(maxWidth: .infinity)
+                                        .background(Color.green)
+                                        .cornerRadius(12)
+                                }
+                                .padding(.horizontal)
+                                .padding(.vertical, 8)
+                                
+                                if selectedImage != nil {
+                                    Button(action: {
+                                        generatePixelArt()
+                                        isQRGenerated = true
+                                    }) {
+                                        Text("Generate Pixel Art QR Code")
+                                            .font(.headline)
+                                            .foregroundColor(.white)
+                                            .frame(height: 50)
+                                            .frame(maxWidth: .infinity)
+                                            .background(Color.blue)
+                                            .cornerRadius(12)
+                                    }
+                                    .padding(.horizontal)
+                                }
+                            }
                         }
-                        .padding()
+                    } else {
+                        // QR Code Display View
+                        if let qrCode = qrCode {
+                            Spacer()
+                            
+                            VStack(spacing: 16) {
+                                Image(uiImage: qrCode)
+                                    .interpolation(.none)
+                                    .resizable()
+                                    .scaledToFit()
+                                    .frame(width: 250, height: 250)
+                                    .background(Color.white.opacity(0.1))
+                                    .clipShape(RoundedRectangle(cornerRadius: 20))
+                                    .shadow(color: .blue.opacity(0.7), radius: 10)
+                                
+                                if !pixelArtText.isEmpty {
+                                    Text("Original Pixel Art:")
+                                        .font(.headline)
+                                        .foregroundColor(.white)
+                                        .padding(.top, 8)
+                                    
+                                    Text(pixelArtText)
+                                        .font(.system(.body, design: .monospaced))
+                                        .padding(8)
+                                        .background(Color.gray.opacity(0.2))
+                                        .cornerRadius(8)
+                                }
+                            }
+                            
+                            Spacer()
+                            
+                            HStack(spacing: 20) {
+                                Button(action: {
+                                    isQRGenerated = false
+                                    pixelArtText = ""
+                                }) {
+                                    Text("Change")
+                                        .font(.headline)
+                                        .foregroundColor(.white)
+                                        .frame(height: 50)
+                                        .frame(maxWidth: .infinity)
+                                        .background(Color.gray)
+                                        .cornerRadius(12)
+                                }
+                                
+                                Button(action: {
+                                    saveQRCode()
+                                }) {
+                                    Text("Save")
+                                        .font(.headline)
+                                        .foregroundColor(.white)
+                                        .frame(height: 50)
+                                        .frame(maxWidth: .infinity)
+                                        .background(Color.blue)
+                                        .cornerRadius(12)
+                                }
+                            }
+                            .padding()
+                        }
                     }
+                    
+                    Spacer()
                 }
-                
-                Spacer()
             }
             .navigationTitle("QR Code Generator")
+            .toolbarColorScheme(.dark, for: .navigationBar)
+            .toolbarBackground(Color.black.opacity(0.9), for: .navigationBar)
+            .toolbarBackground(.visible, for: .navigationBar)
+            .foregroundColor(.white) // Sets default text color to white
             .sheet(isPresented: $showingImagePicker) {
                 ImagePicker(image: $selectedImage)
             }
@@ -164,6 +177,7 @@ struct ContentView: View {
                 )
             }
         }
+        .preferredColorScheme(.dark) // Apply dark mode to the entire app
     }
     
     func generateQRCode() {
@@ -329,4 +343,3 @@ struct ContentView: View {
         showingAlert = true
     }
 }
-
