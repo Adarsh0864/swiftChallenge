@@ -25,7 +25,6 @@ struct ContentView: View {
                 
                 VStack {
                     if !isQRGenerated {
-                        // QR Code Generation Options
                         Picker("QR Code Type", selection: $generationType) {
                             Text("Text").tag(GenerationType.text)
                             Text("Image").tag(GenerationType.image)
@@ -98,7 +97,6 @@ struct ContentView: View {
                             }
                         }
                     } else {
-                        // QR Code Display View
                         if let qrCode = qrCode {
                             Spacer()
                             
@@ -157,15 +155,14 @@ struct ContentView: View {
                             .padding()
                         }
                     }
-                    
                     Spacer()
                 }
             }
-            .navigationTitle("QR Code Generator")
+            .navigationTitle("QRMatrix")
             .toolbarColorScheme(.dark, for: .navigationBar)
             .toolbarBackground(Color.black.opacity(0.9), for: .navigationBar)
             .toolbarBackground(.visible, for: .navigationBar)
-            .foregroundColor(.white) // Sets default text color to white
+            .foregroundColor(.white)
             .sheet(isPresented: $showingImagePicker) {
                 ImagePicker(image: $selectedImage)
             }
@@ -177,9 +174,9 @@ struct ContentView: View {
                 )
             }
         }
-        .preferredColorScheme(.dark) // Apply dark mode to the entire app
+        .preferredColorScheme(.dark)
     }
-    
+
     func generateQRCode() {
         guard !inputText.isEmpty else {
             qrCode = nil
