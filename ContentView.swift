@@ -2,6 +2,33 @@ import SwiftUI
 import CoreImage.CIFilterBuiltins
 import PhotosUI
 
+// Extension to handle hex colors
+extension Color {
+    init(hex: String) {
+        let hex = hex.trimmingCharacters(in: CharacterSet.alphanumerics.inverted)
+        var int: UInt64 = 0
+        Scanner(string: hex).scanHexInt64(&int)
+        let a, r, g, b: UInt64
+        switch hex.count {
+        case 3: // RGB (12-bit)
+            (a, r, g, b) = (255, (int >> 8) * 17, (int >> 4 & 0xF) * 17, (int & 0xF) * 17)
+        case 6: // RGB (24-bit)
+            (a, r, g, b) = (255, int >> 16, int >> 8 & 0xFF, int & 0xFF)
+        case 8: // ARGB (32-bit)
+            (a, r, g, b) = (int >> 24, int >> 16 & 0xFF, int >> 8 & 0xFF, int & 0xFF)
+        default:
+            (a, r, g, b) = (255, 0, 0, 0)
+        }
+        self.init(
+            .sRGB,
+            red: Double(r) / 255,
+            green: Double(g) / 255,
+            blue: Double(b) / 255,
+            opacity: Double(a) / 255
+        )
+    }
+}
+
 struct ContentView: View {
     @State private var inputText = ""
     @State private var qrCode: UIImage?
@@ -12,6 +39,7 @@ struct ContentView: View {
     @State private var showingImagePicker = false
     @State private var generationType: GenerationType = .text
     @State private var isQRGenerated = false
+    @State private var showingShareSheet = false
     
     enum GenerationType {
         case text
@@ -21,7 +49,7 @@ struct ContentView: View {
     var body: some View {
         NavigationView {
             ZStack {
-                Color.black.edgesIgnoringSafeArea(.all)
+                Color(hex: "#f2f2f7").edgesIgnoringSafeArea(.all)
                 
                 VStack {
                     if !isQRGenerated {
@@ -31,14 +59,12 @@ struct ContentView: View {
                         }
                         .pickerStyle(SegmentedPickerStyle())
                         .padding()
-                        .colorScheme(.dark)
                         
                         if generationType == .text {
                             TextField("Enter text for QR code", text: $inputText)
                                 .textFieldStyle(RoundedBorderTextFieldStyle())
                                 .padding(.horizontal)
                                 .padding(.bottom)
-                                .colorScheme(.dark)
                             
                             Button(action: {
                                 generateQRCode()
@@ -106,20 +132,20 @@ struct ContentView: View {
                                     .resizable()
                                     .scaledToFit()
                                     .frame(width: 250, height: 250)
-                                    .background(Color.white.opacity(0.1))
+                                    .background(Color.white)
                                     .clipShape(RoundedRectangle(cornerRadius: 20))
-                                    .shadow(color: .blue.opacity(0.7), radius: 10)
+                                    .shadow(color: .gray.opacity(0.3), radius: 10)
                                 
                                 if !pixelArtText.isEmpty {
                                     Text("Original Pixel Art:")
                                         .font(.headline)
-                                        .foregroundColor(.white)
+                                        .foregroundColor(.black)
                                         .padding(.top, 8)
                                     
                                     Text(pixelArtText)
                                         .font(.system(.body, design: .monospaced))
                                         .padding(8)
-                                        .background(Color.gray.opacity(0.2))
+                                        .background(Color.white)
                                         .cornerRadius(8)
                                 }
                             }
@@ -151,6 +177,18 @@ struct ContentView: View {
                                         .background(Color.blue)
                                         .cornerRadius(12)
                                 }
+                                
+                                Button(action: {
+                                    showingShareSheet = true
+                                }) {
+                                    Text("Share")
+                                        .font(.headline)
+                                        .foregroundColor(.white)
+                                        .frame(height: 50)
+                                        .frame(maxWidth: .infinity)
+                                        .background(Color.green)
+                                        .cornerRadius(12)
+                                }
                             }
                             .padding()
                         }
@@ -159,10 +197,7 @@ struct ContentView: View {
                 }
             }
             .navigationTitle("QRMatrix")
-            .toolbarColorScheme(.dark, for: .navigationBar)
-            .toolbarBackground(Color.black.opacity(0.9), for: .navigationBar)
-            .toolbarBackground(.visible, for: .navigationBar)
-            .foregroundColor(.white)
+            .foregroundColor(.black)
             .sheet(isPresented: $showingImagePicker) {
                 ImagePicker(image: $selectedImage)
             }
@@ -173,8 +208,12 @@ struct ContentView: View {
                     dismissButton: .default(Text("OK"))
                 )
             }
+            .sheet(isPresented: $showingShareSheet) {
+                if let qrCode = qrCode {
+                    ShareSheet(items: [qrCode])
+                }
+            }
         }
-        .preferredColorScheme(.dark)
     }
 
     func generateQRCode() {
@@ -203,14 +242,9 @@ struct ContentView: View {
     func generatePixelArt() {
         guard let selectedImage = selectedImage else { return }
         
-        // Create a pixel representation (15x15 pixels)
         let pixelArt = createPixelArt(from: selectedImage, size: 15)
-        
-        // Generate a textual representation with emoji colors
         let emojiPixelArt = convertToEmojiPixelArt(pixelArt)
         pixelArtText = emojiPixelArt
-        
-        // Generate QR code with this text
         generateQRFromText(emojiPixelArt)
     }
     
@@ -254,30 +288,29 @@ struct ContentView: View {
         
         for row in pixelArt {
             for color in row {
-                // Find the closest color match
                 var red: CGFloat = 0, green: CGFloat = 0, blue: CGFloat = 0, alpha: CGFloat = 0
                 color.getRed(&red, green: &green, blue: &blue, alpha: &alpha)
                 
                 if alpha < 0.5 {
-                    result += "⬜️" // Transparent/white
+                    result += "⬜️"
                 } else if red > 0.7 && green < 0.3 && blue < 0.3 {
-                    result += "🟥" // Red
+                    result += "🟥"
                 } else if red > 0.7 && green > 0.5 && blue < 0.3 {
-                    result += "🟧" // Orange
+                    result += "🟧"
                 } else if red > 0.7 && green > 0.7 && blue < 0.3 {
-                    result += "🟨" // Yellow
+                    result += "🟨"
                 } else if red < 0.3 && green > 0.6 && blue < 0.3 {
-                    result += "🟩" // Green
+                    result += "🟩"
                 } else if red < 0.3 && green < 0.3 && blue > 0.6 {
-                    result += "🟦" // Blue
+                    result += "🟦"
                 } else if red > 0.5 && green < 0.3 && blue > 0.5 {
-                    result += "🟪" // Purple
+                    result += "🟪"
                 } else if red > 0.5 && green > 0.3 && blue < 0.3 {
-                    result += "🟫" // Brown
+                    result += "🟫"
                 } else if red < 0.2 && green < 0.2 && blue < 0.2 {
-                    result += "⬛️" // Black
+                    result += "⬛️"
                 } else {
-                    result += "⬜️" // Default to white
+                    result += "⬜️"
                 }
             }
             result += "\n"
@@ -314,14 +347,11 @@ struct ContentView: View {
         let widthRatio = targetSize.width / size.width
         let heightRatio = targetSize.height / size.height
         
-        // Determine what ratio to use to maintain aspect ratio
         let ratio = min(widthRatio, heightRatio)
         let newSize = CGSize(width: size.width * ratio, height: size.height * ratio)
         
-        // Create a new context
         UIGraphicsBeginImageContextWithOptions(targetSize, false, 1.0)
         
-        // Calculate centering rect to maintain aspect ratio
         let originX = (targetSize.width - newSize.width) / 2.0
         let originY = (targetSize.height - newSize.height) / 2.0
         
@@ -339,4 +369,16 @@ struct ContentView: View {
         alertMessage = "QR Code saved to Photos"
         showingAlert = true
     }
+}
+
+
+struct ShareSheet: UIViewControllerRepresentable {
+    let items: [Any]
+    
+    func makeUIViewController(context: Context) -> UIActivityViewController {
+        let controller = UIActivityViewController(activityItems: items, applicationActivities: nil)
+        return controller
+    }
+    
+    func updateUIViewController(_ uiViewController: UIActivityViewController, context: Context) {}
 }
